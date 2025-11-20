@@ -66,52 +66,13 @@
         .dark .news-item a { color: #9cd2ff; }
         .light .news-item a { color: #0055aa; }
     
-        /* Layout container for clean aesthetic */
-        .container {
-            max-width: 720px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 3rem;
-            padding-bottom: 4rem;
-        }
-
-        /* Improve spacing + alignment */
-        .section {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            gap: 1rem;
-        }
-
-        /* Cleaner news list */
-        .news-list { padding-left: 1rem; }
-        .news-item { opacity: 0.85; }
-
-        /* Subtle hover */
-        .news-item a:hover { opacity: 0.6; }
-
-        /* Smooth fade animations */
-        .fade-in {
-            animation: fadeIn 0.6s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @media (max-width: 600px) {
-            .time { font-size: 5rem; }
+        
             .container { padding: 1rem; }
         }
     </style>
 </head>
 <body class="dark">
-    <div class="container fade-in">
+    
     <button class="theme-toggle" id="themeToggle">◐</button>
 
     <div class="time" id="time">00:00</div>
@@ -127,7 +88,7 @@
         </div>
     </div>
 
-    <div class="section weather">
+    <div class="weather">
         <div class="temp" id="temp">--°</div>
         <div>
             <div class="condition" id="condition">Loading weather...</div>
@@ -136,7 +97,7 @@
     </div>
 
     <!-- News Section -->
-    <div class="section news-section fade-in">
+    <div class="news-section">
         <div class="news-title">Latest Headlines</div>
         <ul class="news-list" id="newsList">
             <li class="news-item">Loading news...</li>
@@ -196,29 +157,38 @@ async function getWeather() {
 getWeather();
 setInterval(getWeather, 600000);
 
-// Minimal News API (Top 5 Headlines)
+// Minimal CNN RSS Feed Loader (Top 5 Headlines)
 async function loadNews() {
     const list = document.getElementById('newsList');
     list.innerHTML = '<li class="news-item">Loading...</li>';
 
     try {
-        const res = await fetch("https://gnews.io/api/v4/top-headlines?lang=en&country=us&max=5&apikey=demo");
+        const res = await fetch("https://api.allorigins.win/get?url=" + encodeURIComponent("http://rss.cnn.com/rss/cnn_topstories.rss"));
         const data = await res.json();
 
-        list.innerHTML = '';
-        data.articles.slice(0, 5).forEach(a => {
-            const li = document.createElement('li');
-            li.className = 'news-item';
-            li.innerHTML = `<a href='${a.url}' target='_blank'>• ${a.title}</a>`;
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(data.contents, "application/xml");
+        const items = Array.from(xml.querySelectorAll("item")).slice(0, 5);
+
+        list.innerHTML = "";
+
+        items.forEach(item => {
+            const title = item.querySelector("title")?.textContent || "No title";
+            const link = item.querySelector("link")?.textContent;
+
+            const li = document.createElement("li");
+            li.className = "news-item";
+            li.innerHTML = `<a href="${link}" target="_blank">• ${title}</a>`;
             list.appendChild(li);
         });
+
     } catch (e) {
         list.innerHTML = '<li class="news-item">Unable to load news</li>';
     }
 }
+
 loadNews();
 setInterval(loadNews, 300000);
 </script>
-    </div>
-</body>
+    </body>
 </html>
